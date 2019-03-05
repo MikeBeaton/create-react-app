@@ -17,8 +17,33 @@ const os = require('os');
 const immer = require('react-dev-utils/immer').produce;
 const globby = require('react-dev-utils/globby').sync;
 
-function writeJson(fileName, object) {
-  fs.writeFileSync(fileName, JSON.stringify(object, null, 2) + os.EOL);
+function convertSelfLinebreakStyle(selfLinebreakStyle) {
+  switch (selfLinebreakStyle) {
+    case 'unix':
+      return '\n';
+    case 'windows':
+      return '\r\n';
+    case 'native':
+      return os.EOL;
+    case undefined:
+      return os.EOL;
+    default: 
+      console.error(
+        chalk.bold(
+          'Invalid',
+          chalk.cyan('selfLinebreakStyle'),
+          chalk.red(`'${selfLinebreakStyle}'`),
+          'in',
+          chalk.cyan('tsconfig.json'),
+          '(use \'native\', \'unix\' or \'windows\')'
+        )
+      );
+      return os.EOL;
+  }
+}
+
+function writeJson(eol, fileName, object) {
+  fs.writeFileSync(fileName, JSON.stringify(object, null, 2).replace(/\n/g, eol) + eol);
 }
 
 function verifyNoTypeScript() {
@@ -44,7 +69,7 @@ function verifyTypeScriptSetup() {
     if (verifyNoTypeScript()) {
       return;
     }
-    writeJson(paths.appTsConfig, {});
+    writeJson(os.EOL, paths.appTsConfig, {});
     firstTimeSetup = true;
   }
 
@@ -245,7 +270,7 @@ function verifyTypeScriptSetup() {
       });
       console.warn();
     }
-    writeJson(paths.appTsConfig, appTsConfig);
+    writeJson(convertSelfLinebreakStyle(parsedTsConfig.selfLinebreakStyle), paths.appTsConfig, appTsConfig);
   }
 
   // Reference `react-scripts` types
